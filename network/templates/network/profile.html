@@ -1,0 +1,112 @@
+{% extends "network/layout.html" %}
+{% load static %}
+
+{% block script %}
+    <script src="{% static 'network/index.js' %}"></script>
+{% endblock %}
+
+{% block body %}
+
+<!--Profile info-->
+<div class="profile-info">
+    <div id="profile-info">
+        <h2>{{ profile.username }}</h2>
+        <p>{{ profile.username }} is followed by {{ followers }} people.</p>
+    </div>
+
+    <!--If the user is logged in and not the profile owner then display follow button-->
+    {% if user.is_authenticated and not user.id == profile.id %}
+
+        <!--If the user is not already following the profile-->
+        {% if not following %}
+            <div id="profile-follow">
+                <form id="follow-button" action="{% url 'follow' profile.id %}">
+                    <input type="submit" value="Follow">
+                </form>
+            </div>
+
+        <!--If the user is already following the profile-->
+        {% else %}
+            <div id="profile-follow">
+                <form id="follow-button" action="{% url 'unfollow' profile.id %}">
+                    <input type="submit" value="Unfollow">
+                </form>
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<!--Profile posts-->
+<div id="feed">
+
+    <!--If there are posts then display them-->
+    {% if posts %}
+        <h2 class="title">{{ profile.username }}'s Posts</h2>
+        {% for post in posts %}
+            <div class="post-block">
+
+                <!--Author and Timestamp-->
+                <div class="post-info">
+                    <div class="author">
+                        <a href="{% url 'profile' post.user.id %}">{{ post.user }}</a>
+                    </div>
+                    <div class="timestamp">
+                        <p>{{ post.timestamp }}</p>
+                    </div>
+                </div>
+
+                <!--The post-->
+                <div class="post-content">
+                    <textarea class="post-content" id="post_{{ post.id }}" disabled="true">{{ post.content }}</textarea>
+                </div>
+
+                <!--Likes for that post-->
+                <div class="post-likes">
+
+                    <!--Make sure the user can't like their own post-->
+                    {% if post.user == user %}
+                        <p class="likes" id="like_{{ post.id }}">{{ post.like_count }} Likes</p>
+                    {% else %}
+                        {% if post.id in likes %}
+                            <p class="likes liked" id="like_{{ post.id }}" onclick="unlike('{{ post.id }}')">{{ post.like_count }} Likes</p>
+                        {% else %}
+                            <p class="likes" id="like_{{ post.id }}" onclick="like('{{ post.id }}')">{{ post.like_count }} Likes</p>
+                        {% endif %}
+                    {% endif %}
+
+                    <!--If the user is logged in then allow the edit button-->
+                    {% if post.user == request.user %}
+                        <div class="edit" id="edit_{{ post.id }}">
+                            <p onclick="edit_post('{{ post.id }}')">Edit</p>
+                        </div>
+                        <div class="save" id="save_{{ post.id }}">
+                            <p onclick="save_edit('{{ post.id }}')">Save</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+
+    <!--If there aren't any posts then display no posts-->
+    {% else %}
+        <h2 class="title">No Posts to show</h2>
+    {% endif %}
+
+    <!--Pagination-->
+    <div class="page-nav">
+        {% if posts.has_previous %}
+            <div id="previous-page">
+                <a href="{% url 'profile' profile.id %}?page={{ posts.previous_page_number }}"><-Previous</a>
+            </div>
+        {% endif %}
+        <div id="current-page">
+            <p> -- Page {{ posts.number }} -- </p>
+        </div>
+        {% if posts.has_next %}
+            <div id="next-page">
+                <a href="{% url 'profile' profile.id %}?page={{ posts.next_page_number }}">Next-></a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
